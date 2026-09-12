@@ -1,0 +1,37 @@
+SOC HOME LAB - SPLUNK DETECTION QUERIES
+
+1. RDP Brute Force Detection
+index=main source="WinEventLog:Security" "4625" "192.168.249.129"
+
+Purpose:
+Detect multiple failed Windows login attempts from the Kali Linux test machine.
+
+2. Network Reconnaissance Detection
+index=main sourcetype=windows:firewall
+| rex field=_raw "^\S+\s+\S+\s+(?<action>\S+)\s+(?<protocol>\S+)\s+(?<src_ip>\S+)\s+(?<dest_ip>\S+)\s+(?<src_port>\d+)\s+(?<dest_port>\d+)"
+| where src_ip!="127.0.0.1"
+| stats dc(dest_port) as unique_ports values(dest_port) as ports count as attempts by src_ip dest_ip
+| where unique_ports >= 4
+| sort - unique_ports
+
+Purpose:
+Detect a source accessing multiple destination ports on a Windows endpoint.
+
+3. Suspicious PowerShell Detection
+index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" "ExecutionPolicy Bypass"
+| rex field=_raw "Data Name='ProcessId'>(?<ProcessId>[^<]+)"
+| rex field=_raw "Data Name='Image'>(?<Image>[^<]+)"
+| rex field=_raw "Data Name='CommandLine'>(?<CommandLine>[^<]+)"
+| rex field=_raw "Data Name='User'>(?<User>[^<]+)"
+| rex field=_raw "Data Name='ParentImage'>(?<ParentImage>[^<]+)"
+| table _time host ProcessId Image CommandLine User ParentImage
+| sort - _time
+
+Purpose:
+Identify PowerShell executions using ExecutionPolicy Bypass for investigation.
+
+4. Windows Firewall Investigation
+index=main sourcetype=windows:firewall "192.168.249.129"
+
+Purpose:
+Investigate network activity originating from the Kali Linux test machine.
