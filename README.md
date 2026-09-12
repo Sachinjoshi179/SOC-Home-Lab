@@ -1,4 +1,4 @@
-# SOC-Home-Lab
+
 # SOC Home Lab
 
 A practical SOC Analyst L1 home lab built to practice security
